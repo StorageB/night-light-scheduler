@@ -228,8 +228,9 @@ export function createScheduleGraph(schedule, clockFormat) {
             if (clockFormat === "24h") {
                  axisLabel = h.toString().padStart(2, '0');
             } else {
-                const period = h >= 12 ? "PM" : "AM";
-                const hour = h % 12 || 12;
+                const normalized = h % 24;
+                const period = normalized >= 12 ? "PM" : "AM";
+                const hour = normalized % 12 || 12;
                 axisLabel = `${hour} ${period}`;
             }
             
