@@ -1,8 +1,6 @@
 # Night Light Scheduler
 
-#### A GNOME extension to create a fully customizable time-of-day schedule for the built-in Night Light.
-
-Instead of a simple sunset-to-sunrise transition or a single on/off time setting, define multiple time points to adjust color temperature throughout the day to reduce blue light and improve eye comfort. This extension provides an interactive graph and quick controls to edit time and temperature values directly from the preferences window.
+#### A GNOME extension for creating a time-of-day schedule for the built-in Night Light.
 
 ![screenshot-main](img/screenshot-00.png)
 
@@ -28,8 +26,8 @@ To install manually:
 
 To enable and configure the extension:
 ```
-gnome-extensions enable custom-command-toggle@storageb.github.com
-gnome-extensions prefs custom-command-toggle@storageb.github.com
+gnome-extensions enable night-light-scheduler@storageb.github.com
+gnome-extensions prefs night-light-scheduler@storageb.github.com
 ```
 
 ## Configuration
