@@ -1,0 +1,3 @@
+.row-hover-highlight {
+    background-color: alpha(currentColor, 0.08);
+}

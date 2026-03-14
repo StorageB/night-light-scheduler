@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.night-light-scheduler" path="/org/gnome/shell/extensions/night-light-scheduler/">
+
+  <key name="schedule" type="a(uuu)">
+    <default>
+      [
+        (0, 0, 2400),  
+        (7, 0, 3300),
+        (9, 0, 4300),
+        (19, 30, 3500),
+        (21, 0, 3000),
+        (22, 0, 2400)
+      ]
+    </default>
+    <summary>Night Light schedule</summary>
+    <description>Array of schedule entries: (hour, minute, temperature).</description>
+  </key>
+  
+  </schema>
+</schemalist>
