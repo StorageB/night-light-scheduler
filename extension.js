@@ -24,7 +24,7 @@ import Gio from "gi://Gio";
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-export default class PlainExampleExtension extends Extension {
+export default class NightLightScheduler extends Extension {
 
     enable() {
 
@@ -64,11 +64,7 @@ export default class PlainExampleExtension extends Extension {
         }
 
         const rawSchedule = this._extensionSettings.get_value("schedule").deep_unpack();
-        const schedule = rawSchedule.map(([hour, minute, temp]) => ({
-            hour,
-            minute,
-            temp,
-        }));
+        const schedule = rawSchedule.map(([hour, minute, temp]) => ({ hour, minute, temp }));
 
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -92,11 +88,11 @@ export default class PlainExampleExtension extends Extension {
     
         const currentTemp = this._colorSettings.get_uint("night-light-temperature");
         
-        console.log(`[Night Light Scheduler] current minutes: ${currentMinutes} | current temp: ${currentTemp}K | selected temp: ${selectedTemp}K | next in: ${secondsUntilNext}s`);
+        //console.log(`[Night Light Scheduler] current time: ${currentMinutes} minutes | current temp: ${currentTemp}K | selected temp: ${selectedTemp}K | next change in: ${secondsUntilNext}s`);
 
         if (currentTemp !== selectedTemp) {
             this._colorSettings.set_uint("night-light-temperature", selectedTemp);
-            console.log(`[Night Light Scheduler] Temperature set to ${selectedTemp}`);
+            //console.log(`[Night Light Scheduler] Temperature set to ${selectedTemp}`);
         }
 
         this._timeoutId = GLib.timeout_add_seconds(
@@ -107,7 +103,5 @@ export default class PlainExampleExtension extends Extension {
                 return GLib.SOURCE_REMOVE;
             }
         );
-
-        console.log(`[Night Light Scheduler] Next change in ${secondsUntilNext} seconds`);
     }
 }

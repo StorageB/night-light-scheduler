@@ -24,12 +24,15 @@ import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import Adw from 'gi://Adw';
 import GLib from "gi://GLib";
-import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {createScheduleGraph} from './graph.js';
+import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+
+import { createScheduleGraph } from './graph.js';
+import { exportProfile } from './backup.js';
+import { importProfile } from './backup.js';
 
 export default class Prefs extends ExtensionPreferences {
     fillPreferencesWindow(window) {
-        window.set_default_size(650, 850);
+        window.set_default_size(630, 760);
         window._settings = this.getSettings();
         
         const provider = new Gtk.CssProvider();
@@ -45,7 +48,10 @@ export default class Prefs extends ExtensionPreferences {
         const rows = [];
         const timeIncrement = 15;
         
-        const page = new Adw.PreferencesPage();
+        const page = new Adw.PreferencesPage({
+            title: _('Profile'),
+            icon_name: 'night-light-symbolic',
+        });
         window.add(page);
         
         
@@ -92,22 +98,16 @@ export default class Prefs extends ExtensionPreferences {
         });
         
         
+        /* Add chart */
         
-        const chartGroup = new Adw.PreferencesGroup({
-            title: 'Night Light Profile',
-        });
+        const chartGroup = new Adw.PreferencesGroup();
         page.add(chartGroup);
         
-        const entryGroup = new Adw.PreferencesGroup({
-            title: 'Time and Temperature',
-        });
-        page.add(entryGroup);
-        
-        
-        
+        const entryGroup = new Adw.PreferencesGroup();
+        page.add(entryGroup);  
 
         const rawSchedule = window._settings.get_value('schedule').deep_unpack();
-        const schedule = rawSchedule.map(([hour, minute, temp]) => ({hour, minute, temp}));
+        const schedule = rawSchedule.map(([hour, minute, temp]) => ({ hour, minute, temp }));
 
         const drawingArea = createScheduleGraph(schedule, clockFormat);
         const chartRow = new Adw.PreferencesRow({
@@ -125,6 +125,8 @@ export default class Prefs extends ExtensionPreferences {
         chartRow.set_child(chartBox);
         chartGroup.add(chartRow);
         
+        
+        /* Build UI */
         
         buildScheduleUI();
         
@@ -219,9 +221,6 @@ export default class Prefs extends ExtensionPreferences {
                     plusTimeBtn.set_sensitive(false);
                 } 
                 
-            
-                /*  Connect signals and functions */
-                
                 function createButton(icon) {
                     return new Gtk.Button({
                         icon_name: icon,
@@ -236,7 +235,14 @@ export default class Prefs extends ExtensionPreferences {
                     if (index === -1) return;
                 
                     let minutes = entry.hour * 60 + entry.minute;
-                    minutes += deltaMinutes;
+                    
+                    if (deltaMinutes > 0) {
+                        minutes = Math.floor(minutes / timeIncrement) * timeIncrement;
+                        minutes += timeIncrement;
+                    } else {
+                        minutes = Math.ceil(minutes / timeIncrement) * timeIncrement;
+                        minutes -= timeIncrement;
+                    }
                 
                     let minMinutes = 0;
                     let maxMinutes = 1440;
@@ -319,7 +325,6 @@ export default class Prefs extends ExtensionPreferences {
                     drawingArea.setSchedule(schedule);
                 });
             
-                
                 insertButton.connect('clicked', () => {
                 
                     const index = schedule.indexOf(entry);
@@ -372,7 +377,6 @@ export default class Prefs extends ExtensionPreferences {
                     drawingArea.setSchedule(schedule);
                 });
             
-                /* Add row to UI */
             
                 rows.push(row);
                 entryGroup.add(row);
@@ -388,6 +392,53 @@ export default class Prefs extends ExtensionPreferences {
             });
             
         } // end buildScheduleUI function
+        
+        
+        /* --- Configuration Page --- */
+        
+        const configPage = new Adw.PreferencesPage({
+            title: _('Configuration'),
+            icon_name: 'applications-system-symbolic',
+        });
+        window.add(configPage);
+        
+        const backupGroup = new Adw.PreferencesGroup({
+            title: _('Backup and Restore'),
+        });
+        
+        const exportRow = new Adw.ActionRow({
+            title: _('Export Profile'),
+            subtitle: _('Click to export current profile'),
+            activatable: true,
+	    });
+	    exportRow.add_prefix(new Gtk.Image({ icon_name: 'x-office-document-symbolic' }));
+        
+        exportRow.connect('activated', () => {
+            exportProfile(window._settings, window, schedule);
+        });
+        
+        const importRow = new Adw.ActionRow({
+            title: _('Import Profile'),
+            subtitle: _('Click to import a profile'),
+            activatable: true,
+        });
+        importRow.add_prefix(new Gtk.Image({ icon_name: 'x-office-document-symbolic' }));
+        
+        importRow.connect('activated', () => {
+            importProfile(window._settings, window);
+            schedule.length = 0;
+            const rawSchedule = window._settings.get_value('schedule').deep_unpack();
+            for (let [hour, minute, temp] of rawSchedule) {
+                schedule.push({ hour, minute, temp });
+            }
+        
+            drawingArea.setSchedule(schedule);
+            buildScheduleUI();
+        });
+        
+        configPage.add(backupGroup);
+        backupGroup.add(exportRow);
+        backupGroup.add(importRow);       
     
     } // end of fillPreferencesWindow
     

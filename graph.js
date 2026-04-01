@@ -202,13 +202,7 @@ export function createScheduleGraph(schedule, clockFormat) {
         
         /* Draw dot at current time */
         
-        cr.setSourceRGBA(
-            color.red,
-            color.green,
-            color.blue,
-            0.6
-        );
-        
+        cr.setSourceRGBA(color.red, color.green, color.blue, 0.6);
         cr.arc(x, dotY, 3.5, 0, Math.PI * 2);
         cr.fill();
         
@@ -278,7 +272,7 @@ export function createScheduleGraph(schedule, clockFormat) {
             /* Draw text background box */
             
             /*
-            cr.setSourceRGBA(color.red, color.green, color.blue, 0.1);
+            cr.setSourceRGBA(color.red, color.green, color.blue, 0.2);
             cr.rectangle(labelX - 6, labelY - 3, textWidth + 12, textHeight + 6);
             cr.fill();
             */
@@ -353,7 +347,6 @@ export function createScheduleGraph(schedule, clockFormat) {
         return lastTemp;
     }
     
-
     drawingArea.setClockFormat = function(newFormat) {
         clockFormat = newFormat;
         drawingArea.queue_draw();
