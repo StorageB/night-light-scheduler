@@ -1,6 +1,7 @@
 {
     "name": "Night Light Scheduler",
     "description": "Create a custom time-of-day schedule for the Night Light.",
+    "url": "https://github.com/StorageB/night-light-scheduler",
     "settings-schema": "org.gnome.shell.extensions.night-light-scheduler",
     "uuid": "night-light-scheduler@storageb.github.com",
     "shell-version": ["45", "46", "47", "48", "49"]

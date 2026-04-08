@@ -2,7 +2,7 @@
  *
  * This file is part of the Night Light Scheduler GNOME Shell extension
  * https://github.com/StorageB/night-light-scheduler
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
@@ -18,141 +18,145 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
- 
-import Gio from 'gi://Gio';
-import Adw from 'gi://Adw';
-import Gtk from 'gi://Gtk';
-import GLib from 'gi://GLib';
 
-import { gettext as _, ngettext } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import Gio from "gi://Gio";
+import Adw from "gi://Adw";
+import Gtk from "gi://Gtk";
+import GLib from "gi://GLib";
 
-let fileName = 'nightlight.ini';
-let filePath = GLib.build_filenamev([GLib.get_home_dir(), fileName]);
+import {
+    gettext as _,
+    ngettext,
+} from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
+let FILE_NAME = "nightlight.ini";
+let FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), FILE_NAME]);
 
-export function exportProfile(settings, window, schedule) {
+export function exportProfile(window, schedule, max_temp, min_temp) {
     const timestamp = new Date().toLocaleString();
     let keyFile = new GLib.KeyFile();
 
     /* Header */
-    
-    keyFile.set_comment(null, null,
+
+    keyFile.set_comment(
+        null,
+        null,
         ` Night Light Scheduler \n` +
-        ` Exported settings for the Night Light Scheduler extension \n` +
-        ` File generated on ${timestamp} \n` +
-        ` \n`
-        // add key file format info (time format and temp range)
+            ` Exported settings for the Night Light Scheduler extension \n` +
+            ` File generated on ${timestamp} \n` +
+            ` \n` +
+            //` Schedule Information:\n` +
+            ` Times must use 24 hour format and be in ascending order beginning with 0:00 \n` +
+            ` Temperature (Kelvin) must be between ${min_temp} and ${max_temp} \n ` +
+            ` \n`,
     );
 
     /* Export Settings */
 
     for (let entry of schedule) {
-        const time =  entry.hour + ":" + entry.minute.toString().padStart(2, "0");
+        const time =
+            entry.hour + ":" + entry.minute.toString().padStart(2, "0");
         keyFile.set_integer("schedule", time, entry.temp);
     }
 
     /* Save file */
-    
+
     try {
-        keyFile.save_to_file(filePath);
-        console.log(`[Night Light Scheduler] Profile exported to ${filePath}`);
-        const toast = Adw.Toast.new(_('Profile exported to: %s').format(filePath));
+        keyFile.save_to_file(FILE_PATH);
+        const toast = Adw.Toast.new(
+            _("Profile exported to: %s").format(FILE_PATH),
+        );
         toast.set_timeout(4);
-        toast.set_button_label(_('Open'));
-        toast.connect('button-clicked', () => {
+        toast.set_button_label(_("Open"));
+        toast.connect("button-clicked", () => {
             // Determine if there is a default text editor available and open the saved file
-            let appInfo = Gio.AppInfo.get_default_for_type('text/plain', false);
+            let appInfo = Gio.AppInfo.get_default_for_type("text/plain", false);
             if (appInfo) {
-                appInfo.launch_uris([`file://${filePath}`], null);
+                appInfo.launch_uris([`file://${FILE_PATH}`], null);
             } else {
                 const noAppDialog = new Gtk.MessageDialog({
                     transient_for: window,
                     modal: true,
-                    text: _('Application Not Found'),
-                    secondary_text: _
-                        ('No default application found to open .ini files.\n\n' +
-                            'The nightlight.ini file can be opened and modified in any text editor. ' +
-                            'To open the file, it may first be required to manually associate the .ini file ' +
-                            'with the default text editor by doing the following:\n\n' +
-                            '1. Open the home directory and locate the nightlight.ini file\n' +
+                    text: _("Application Not Found"),
+                    secondary_text: _(
+                        "No default application found to open .ini files.\n\n" +
+                            "The nightlight.ini file can be opened and modified in any text editor. " +
+                            "To open the file, it may first be required to manually associate the .ini file " +
+                            "with the default text editor by doing the following:\n\n" +
+                            "1. Open the home directory and locate the nightlight.ini file\n" +
                             '2. Right-click on the file and select "Open with..."\n' +
-                            '3. Choose a default text editor, and select the option "Always use for this file type"'
-                        ),
+                            '3. Choose a default text editor, and select the option "Always use for this file type"',
+                    ),
                     buttons: Gtk.ButtonsType.CLOSE,
                 });
-                noAppDialog.connect('response', () => noAppDialog.destroy());
+                noAppDialog.connect("response", () => noAppDialog.destroy());
                 noAppDialog.show();
             }
         });
         window.add_toast(toast);
     } catch (e) {
-        console.log(`[Night Light Scheduler] Failed to export settings\n${e}`);
-        const toast = Adw.Toast.new(_('Export Error'));
+        const toast = Adw.Toast.new(_("Export Error"));
         toast.set_timeout(4);
-        toast.set_button_label(_('Details'));
-        toast.connect('button-clicked', () => {
+        toast.set_button_label(_("Details"));
+        toast.connect("button-clicked", () => {
             let errorDialog = new Adw.MessageDialog({
                 transient_for: window,
                 modal: true,
-                heading: _('Export Error'),
-                body: _('Failed to export settings\n\n%s').format(e),
+                heading: _("Export Error"),
+                body: _("Failed to export settings\n\n%s").format(e),
             });
-            errorDialog.add_response('ok', _('OK'));
-            errorDialog.connect('response', () => errorDialog.destroy());
+            errorDialog.add_response("ok", _("OK"));
+            errorDialog.connect("response", () => errorDialog.destroy());
             errorDialog.show();
         });
         window.add_toast(toast);
     }
 }
 
-
-export function importProfile(settings, window) {
-
+export function importProfile(settings, window, max_temp, min_temp) {
     let keyFile = new GLib.KeyFile();
 
     /* Check if file exists */
-    
-    if (!GLib.file_test(filePath, GLib.FileTest.EXISTS)) {
-        const toast = Adw.Toast.new(_('File not found'));
+
+    if (!GLib.file_test(FILE_PATH, GLib.FileTest.EXISTS)) {
+        const toast = Adw.Toast.new(_("File not found"));
         toast.set_timeout(4);
-        toast.set_button_label(_('Details'));
-        toast.connect('button-clicked', () => {
+        toast.set_button_label(_("Details"));
+        toast.connect("button-clicked", () => {
             let errorDialog = new Adw.MessageDialog({
                 transient_for: window,
                 modal: true,
-                heading: _('File Not Found'),
+                heading: _("File Not Found"),
                 body: _(
                     "The %s configuration file was not found in the user's home directory.\n\n" +
-                    "Verify the following file exists:\n\n%s"
-                ).format(fileName, filePath),
+                        "Verify the following file exists:\n\n%s",
+                ).format(FILE_NAME, FILE_PATH),
             });
-            errorDialog.add_response('ok', _('OK'));
-            errorDialog.connect('response', () => errorDialog.destroy());
+            errorDialog.add_response("ok", _("OK"));
+            errorDialog.connect("response", () => errorDialog.destroy());
             errorDialog.show();
         });
         window.add_toast(toast);
-        console.log(`[Night Light Scheduler] Failed to import settings. File not found.`);
         return;
     }
-    
+
     /* Open file */
-    
+
     try {
-        keyFile.load_from_file(filePath, GLib.KeyFileFlags.NONE);
+        keyFile.load_from_file(FILE_PATH, GLib.KeyFileFlags.NONE);
     } catch (e) {
-        console.log('[Night Light Scheduler] Failed to import configuration\n%s'.format(e));
-        const toast = Adw.Toast.new(_('Import Error'));
+        const toast = Adw.Toast.new(_("Import Error"));
         toast.set_timeout(4);
-        toast.set_button_label(_('Details'));
-        toast.connect('button-clicked', () => {
+        toast.set_button_label(_("Details"));
+        toast.connect("button-clicked", () => {
             let errorDialog = new Adw.MessageDialog({
                 transient_for: window,
                 modal: true,
-                heading: _('Import Error'),
-                body: _('Failed to import configuration\n\n%s').format(e),
+                heading: _("Import Error"),
+                body: _("Failed to import configuration\n\n%s").format(e),
             });
-            errorDialog.add_response('ok', _('OK'));
-            errorDialog.connect('response', () => errorDialog.destroy());
+            errorDialog.add_response("ok", _("OK"));
+            errorDialog.connect("response", () => errorDialog.destroy());
             errorDialog.show();
         });
         window.add_toast(toast);
@@ -165,41 +169,53 @@ export function importProfile(settings, window) {
 
     try {
         const [keys] = keyFile.get_keys("schedule");
-        
+
         for (let key of keys) {
-        
             const keyStr = String(key).trim();
             const parts = keyStr.split(":");
-            
+
             // verify time is in XX:XX format
             if (parts.length !== 2) {
-                console.log(keys);
-                console.log(keyStr);
-                console.log(parts);
                 throw new Error(`Invalid time format: ${keyStr}`);
             }
-        
+
             // verify hours and minutes are numbers
             if (!/^\d+$/.test(parts[0]) || !/^\d+$/.test(parts[1]))
-                throw new Error(`Invalid time format: ${key}. Time must be in 24 hour XX:XX format (not AM/PM format)`);
-            
+                throw new Error(
+                    `Invalid time format: ${key}. Time must be in 24 hour XX:XX format (not AM/PM format)`,
+                );
+
             let hour = parseInt(parts[0]);
             let minute = parseInt(parts[1]);
-            
+
             // verify hours and minutes are in proper range
             if (hour < 0 || hour > 24 || minute < 0 || minute > 59)
                 throw new Error(`Out of range time: ${key}`);
 
+            const temp = parseInt(keyFile.get_string("schedule", key), 10);
+
+            // verify temperature is a number
+            if (isNaN(temp)) {
+                throw new Error(
+                    `Invalid temperature of ${temp} at ${key}. Temperature must be an integer without any letters or other characters.`,
+                );
+            }
+
             // verify temperature is in proper range
-            const temp = keyFile.get_integer("schedule", key);
-            if (temp < 1600 || temp > 6500)
-                throw new Error(`Invalid temperature at ${key}`);
+            if (temp < min_temp || temp > max_temp)
+                throw new Error(
+                    `Out of range temperature of ${temp} at ${key}`,
+                );
 
             newSchedule.push({ hour, minute, temp });
         }
 
         // verify the first entry starts at 00:00
-        if (newSchedule.length === 0 || newSchedule[0].hour !== 0 || newSchedule[0].minute !== 0)
+        if (
+            newSchedule.length === 0 ||
+            newSchedule[0].hour !== 0 ||
+            newSchedule[0].minute !== 0
+        )
             throw new Error("Schedule must start at 0:00");
 
         // verify time entries are in ascending order
@@ -209,65 +225,38 @@ export function importProfile(settings, window) {
             const prevMin = prev.hour * 60 + prev.minute;
             const currMin = curr.hour * 60 + curr.minute;
             if (currMin <= prevMin)
-                throw new Error("Schedule times must be in ascending order and use 24 hour XX:XX format (not AM/PM format)");
+                throw new Error(
+                    "Schedule times must be in ascending order and use 24 hour XX:XX format (not AM/PM format)",
+                );
         }
 
         // Convert to GLib.Variant
         const variant = new GLib.Variant(
-            'a(uuu)',
-            newSchedule.map(e => [e.hour, e.minute, e.temp])
+            "a(uuu)",
+            newSchedule.map((e) => [e.hour, e.minute, e.temp]),
         );
-        settings.set_value('schedule', variant);
-
+        settings.set_value("schedule", variant);
     } catch (e) {
-        console.log(`[Night Light Scheduler] Import parse error\n${e}`);
-
-        const toast = Adw.Toast.new(_('Invalid profile format'));
+        const toast = Adw.Toast.new(_("Invalid profile format"));
         toast.set_timeout(4);
-        toast.set_button_label(_('Details'));
-        toast.connect('button-clicked', () => {
+        toast.set_button_label(_("Details"));
+        toast.connect("button-clicked", () => {
             let errorDialog = new Adw.MessageDialog({
                 transient_for: window,
                 modal: true,
-                heading: _('Import Error'),
-                body: _('Invalid profile\n\n%s').format(e),
+                heading: _("Import Error"),
+                body: _("Invalid profile\n\n%s").format(e),
             });
-            errorDialog.add_response('ok', _('OK'));
-            errorDialog.connect('response', () => errorDialog.destroy());
+            errorDialog.add_response("ok", _("OK"));
+            errorDialog.connect("response", () => errorDialog.destroy());
             errorDialog.show();
         });
 
         window.add_toast(toast);
         return;
     }
-    
-    
-    console.log('[Night Light Scheduler] Configuration imported from %s'.format(filePath));
 
-    const toast = Adw.Toast.new(_('Successfully imported profile'));
+    const toast = Adw.Toast.new(_("Successfully imported profile"));
     toast.set_timeout(4);
     window.add_toast(toast);
-
 }
-
-/*
-export function reset(settings, window) {
-    try {
-        const schema = settings.settings_schema;
-        const keys = schema.list_keys();
-
-        for (const key of keys)
-            settings.reset(key);
-
-        const toast = Adw.Toast.new(_('All settings reset to defaults'));
-        window.add_toast(toast);
-
-        console.log('[Night Light Scheduler] All settings successfully reset to defaults');
-    } catch (e) {
-        console.log('[Night Light Scheduler] Failed to reset settings:', e);
-
-        const errorToast = Adw.Toast.new(_('Failed to reset settings'));
-        window.add_toast(errorToast);
-    }
-}
-*/
