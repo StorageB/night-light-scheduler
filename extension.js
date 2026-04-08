@@ -71,6 +71,8 @@ export default class NightLightScheduler extends Extension {
             temp,
         }));
 
+        if (schedule.length === 0) return;
+
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
         const currentSeconds = now.getSeconds();

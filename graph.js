@@ -313,6 +313,11 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
         drawingArea.queue_draw();
     });
 
+    drawingArea.connect("destroy", () => {
+        drawingArea.remove_controller(motion);
+        hoverCallback = null;
+    });
+
     function getTempAtTime(schedule, time) {
         let lastTemp = schedule[0].temp;
         for (let entry of schedule) {

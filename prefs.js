@@ -41,17 +41,19 @@ export default class Prefs extends ExtensionPreferences {
         window.set_default_size(630, 760);
         window._settings = this.getSettings();
 
+        const display = Gdk.Display.get_default();
         const provider = new Gtk.CssProvider();
         provider.load_from_path(
             this.dir.get_child("stylesheet.css").get_path(),
         );
         Gtk.StyleContext.add_provider_for_display(
-            Gdk.Display.get_default(),
+            display,
             provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
 
         const rows = [];
+        const repeatIds = [];
         const timeIncrement = 15;
 
         const page = new Adw.PreferencesPage({
@@ -75,7 +77,9 @@ export default class Prefs extends ExtensionPreferences {
             });
 
             const banner = new Adw.Banner({
-                title: "Night Light is disabled. See Setup notes in the Configuration tab.",
+                title: _(
+                    "Night Light is disabled. See Setup notes in the Configuration tab.",
+                ),
                 button_label: "Dismiss",
                 revealed: true,
             });
@@ -94,11 +98,14 @@ export default class Prefs extends ExtensionPreferences {
         });
         let clockFormat = clockSettings.get_string("clock-format");
 
-        clockSettings.connect("changed::clock-format", () => {
-            clockFormat = clockSettings.get_string("clock-format");
-            drawingArea.setClockFormat(clockFormat);
-            buildScheduleUI();
-        });
+        const clockChangedId = clockSettings.connect(
+            "changed::clock-format",
+            () => {
+                clockFormat = clockSettings.get_string("clock-format");
+                drawingArea.setClockFormat(clockFormat);
+                buildScheduleUI();
+            },
+        );
 
         /* Add chart */
 
@@ -303,11 +310,14 @@ export default class Prefs extends ExtensionPreferences {
                             return GLib.SOURCE_CONTINUE;
                         },
                     );
+                    repeatIds.push(repeatId);
                 }
 
                 function stopRepeat() {
                     if (repeatId !== 0) {
                         GLib.Source.remove(repeatId);
+                        const index = repeatIds.indexOf(repeatId);
+                        if (index !== -1) repeatIds.splice(index, 1);
                         repeatId = 0;
                     }
                 }
@@ -319,7 +329,6 @@ export default class Prefs extends ExtensionPreferences {
                     startRepeat(timeIncrement);
                 });
                 plusPress.connect("released", stopRepeat);
-                plusPress.connect("cancel", stopRepeat);
 
                 plusTimeBtn.add_controller(plusPress);
 
@@ -330,7 +339,6 @@ export default class Prefs extends ExtensionPreferences {
                     startRepeat(-timeIncrement);
                 });
                 minusPress.connect("released", stopRepeat);
-                minusPress.connect("cancel", stopRepeat);
 
                 minusTimeBtn.add_controller(minusPress);
 
@@ -338,13 +346,8 @@ export default class Prefs extends ExtensionPreferences {
                     let temp = Math.round(scale.get_value() / 50) * 50;
 
                     if (temp !== scale.get_value()) scale.set_value(temp);
-
                     entry.temp = temp;
-
-                    if (temp === MAX_TEMP) tempLabel.set_label(`${temp} K`);
-                    else tempLabel.set_label(`${temp} K`);
-
-                    //tempLabel.set_label(`${temp} K`);
+                    tempLabel.set_label(`${temp} K`);
 
                     saveSchedule();
                     drawingArea.setSchedule(schedule);
@@ -417,7 +420,7 @@ export default class Prefs extends ExtensionPreferences {
             });
         } // end buildScheduleUI function
 
-        /* --- Configuration Page --- */
+        /* Configuration page */
 
         const configPage = new Adw.PreferencesPage({
             title: _("Configuration"),
@@ -488,5 +491,14 @@ export default class Prefs extends ExtensionPreferences {
         configPage.add(backupGroup);
         backupGroup.add(exportRow);
         backupGroup.add(importRow);
+
+        /* Cleanup */
+
+        window.connect("close-request", () => {
+            if (clockChangedId) clockSettings.disconnect(clockChangedId);
+            Gtk.StyleContext.remove_provider_for_display(display, provider);
+            repeatIds.forEach((id) => GLib.Source.remove(id));
+            repeatIds.length = 0;
+        });
     } // end of fillPreferencesWindow
 } // end of Prefs class

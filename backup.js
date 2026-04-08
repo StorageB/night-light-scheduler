@@ -36,7 +36,7 @@ export function exportProfile(window, schedule, max_temp, min_temp) {
     const timestamp = new Date().toLocaleString();
     let keyFile = new GLib.KeyFile();
 
-    /* Header */
+    /* HKey file header */
 
     keyFile.set_comment(
         null,
@@ -45,13 +45,12 @@ export function exportProfile(window, schedule, max_temp, min_temp) {
             ` Exported settings for the Night Light Scheduler extension \n` +
             ` File generated on ${timestamp} \n` +
             ` \n` +
-            //` Schedule Information:\n` +
             ` Times must use 24 hour format and be in ascending order beginning with 0:00 \n` +
             ` Temperature (Kelvin) must be between ${min_temp} and ${max_temp} \n ` +
             ` \n`,
     );
 
-    /* Export Settings */
+    /* Export profile */
 
     for (let entry of schedule) {
         const time =
@@ -189,7 +188,7 @@ export function importProfile(settings, window, max_temp, min_temp) {
             let minute = parseInt(parts[1]);
 
             // verify hours and minutes are in proper range
-            if (hour < 0 || hour > 24 || minute < 0 || minute > 59)
+            if (hour < 0 || hour > 23 || minute < 0 || minute > 59)
                 throw new Error(`Out of range time: ${key}`);
 
             const temp = parseInt(keyFile.get_string("schedule", key), 10);
