@@ -23,8 +23,7 @@ To install manually:
 2. In the terminal from the download location run:
 `gnome-extensions install --force night-light-scheduler.zip`
 3. Logout and login.
-
-To enable and configure the extension:
+4. Enable and configure the extension through the [Extension Manager](https://mattjakeman.com/apps/extension-manager) app or by running:
 ```
 gnome-extensions enable night-light-scheduler@storageb.github.com
 gnome-extensions prefs night-light-scheduler@storageb.github.com
@@ -32,6 +31,6 @@ gnome-extensions prefs night-light-scheduler@storageb.github.com
 
 ## Configuration
 
-1. Turn on Night Light in the GNOME Settings.
+1. Turn on Night Light in GNOME Settings.
 2. Select "Manual Schedule", and set Night Light to be always active (midnight to midnight).
 3. Configure your custom schedule through the extension preferences. 
