@@ -24,29 +24,27 @@ import Adw from "gi://Adw";
 import Gtk from "gi://Gtk";
 import GLib from "gi://GLib";
 
-import {
-    gettext as _,
-    ngettext,
-} from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
+import { gettext as _ } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
-let FILE_NAME = "nightlight.ini";
+let FILE_NAME = "schedule.ini";
 let FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), FILE_NAME]);
 
 export function exportProfile(window, schedule, max_temp, min_temp) {
     const timestamp = new Date().toLocaleString();
     let keyFile = new GLib.KeyFile();
 
-    /* HKey file header */
+    /* Key file header */
 
     keyFile.set_comment(
         null,
         null,
         ` Night Light Scheduler \n` +
-            ` Exported settings for the Night Light Scheduler extension \n` +
+            ` Exported schedule for the Night Light Scheduler extension \n` +
             ` File generated on ${timestamp} \n` +
             ` \n` +
+            ` This file must be named ${FILE_NAME} and be located in the user's home directory to import \n` +
             ` Times must use 24 hour format and be in ascending order beginning with 0:00 \n` +
-            ` Temperature (Kelvin) must be between ${min_temp} and ${max_temp} \n ` +
+            ` Temperature (Kelvin) must be between ${min_temp} and ${max_temp} \n` +
             ` \n`,
     );
 
@@ -79,13 +77,12 @@ export function exportProfile(window, schedule, max_temp, min_temp) {
                     text: _("Application Not Found"),
                     secondary_text: _(
                         "No default application found to open .ini files.\n\n" +
-                            "The nightlight.ini file can be opened and modified in any text editor. " +
-                            "To open the file, it may first be required to manually associate the .ini file " +
-                            "with the default text editor by doing the following:\n\n" +
-                            "1. Open the home directory and locate the nightlight.ini file\n" +
+                            "The %s file can be opened and modified in any text editor. " +
+                            "To open the file, it may first be required to manually associate .ini files with the default text editor by doing the following:\n\n" +
+                            "1. Open the home directory and locate the %s file\n" +
                             '2. Right-click on the file and select "Open with..."\n' +
                             '3. Choose a default text editor, and select the option "Always use for this file type"',
-                    ),
+                    ).format(FILE_NAME, FILE_NAME),
                     buttons: Gtk.ButtonsType.CLOSE,
                 });
                 noAppDialog.connect("response", () => noAppDialog.destroy());
@@ -102,7 +99,7 @@ export function exportProfile(window, schedule, max_temp, min_temp) {
                 transient_for: window,
                 modal: true,
                 heading: _("Export Error"),
-                body: _("Failed to export settings\n\n%s").format(e),
+                body: _("Failed to export settings\n\n%s").format(e.message),
             });
             errorDialog.add_response("ok", _("OK"));
             errorDialog.connect("response", () => errorDialog.destroy());
@@ -127,9 +124,9 @@ export function importProfile(settings, window, max_temp, min_temp) {
                 modal: true,
                 heading: _("File Not Found"),
                 body: _(
-                    "The %s configuration file was not found in the user's home directory.\n\n" +
+                    "The configuration file was not found in the user's home directory.\n\n" +
                         "Verify the following file exists:\n\n%s",
-                ).format(FILE_NAME, FILE_PATH),
+                ).format(FILE_PATH),
             });
             errorDialog.add_response("ok", _("OK"));
             errorDialog.connect("response", () => errorDialog.destroy());
@@ -152,7 +149,9 @@ export function importProfile(settings, window, max_temp, min_temp) {
                 transient_for: window,
                 modal: true,
                 heading: _("Import Error"),
-                body: _("Failed to import configuration\n\n%s").format(e),
+                body: _("Failed to import configuration\n\n%s").format(
+                    e.message,
+                ),
             });
             errorDialog.add_response("ok", _("OK"));
             errorDialog.connect("response", () => errorDialog.destroy());
@@ -175,13 +174,15 @@ export function importProfile(settings, window, max_temp, min_temp) {
 
             // verify time is in XX:XX format
             if (parts.length !== 2) {
-                throw new Error(`Invalid time format: ${keyStr}`);
+                throw new Error(_("Invalid time format: %s").format(keyStr));
             }
 
             // verify hours and minutes are numbers
             if (!/^\d+$/.test(parts[0]) || !/^\d+$/.test(parts[1]))
                 throw new Error(
-                    `Invalid time format: ${key}. Time must be in 24 hour XX:XX format (not AM/PM format)`,
+                    _(
+                        "Invalid time format: %s. Time must be in 24 hour XX:XX format (not AM/PM format)",
+                    ).format(key),
                 );
 
             let hour = parseInt(parts[0]);
@@ -189,21 +190,23 @@ export function importProfile(settings, window, max_temp, min_temp) {
 
             // verify hours and minutes are in proper range
             if (hour < 0 || hour > 23 || minute < 0 || minute > 59)
-                throw new Error(`Out of range time: ${key}`);
+                throw new Error(_("Out of range time: %s").format(key));
 
             const temp = parseInt(keyFile.get_string("schedule", key), 10);
 
             // verify temperature is a number
             if (isNaN(temp)) {
                 throw new Error(
-                    `Invalid temperature of ${temp} at ${key}. Temperature must be an integer without any letters or other characters.`,
+                    _(
+                        "Invalid temperature of %s at %s. Temperature must be an integer without any letters or other characters.",
+                    ).format(temp, key),
                 );
             }
 
             // verify temperature is in proper range
             if (temp < min_temp || temp > max_temp)
                 throw new Error(
-                    `Out of range temperature of ${temp} at ${key}`,
+                    _("Out of range temperature of %s at %s").format(temp, key),
                 );
 
             newSchedule.push({ hour, minute, temp });
@@ -215,7 +218,7 @@ export function importProfile(settings, window, max_temp, min_temp) {
             newSchedule[0].hour !== 0 ||
             newSchedule[0].minute !== 0
         )
-            throw new Error("Schedule must start at 0:00");
+            throw new Error(_("Schedule must start at 0:00"));
 
         // verify time entries are in ascending order
         for (let i = 1; i < newSchedule.length; i++) {
@@ -225,7 +228,9 @@ export function importProfile(settings, window, max_temp, min_temp) {
             const currMin = curr.hour * 60 + curr.minute;
             if (currMin <= prevMin)
                 throw new Error(
-                    "Schedule times must be in ascending order and use 24 hour XX:XX format (not AM/PM format)",
+                    _(
+                        "Schedule times must be in ascending order and use 24 hour XX:XX format (not AM/PM format)",
+                    ),
                 );
         }
 
@@ -244,7 +249,7 @@ export function importProfile(settings, window, max_temp, min_temp) {
                 transient_for: window,
                 modal: true,
                 heading: _("Import Error"),
-                body: _("Invalid profile\n\n%s").format(e),
+                body: _("Invalid profile\n\n%s").format(e.message),
             });
             errorDialog.add_response("ok", _("OK"));
             errorDialog.connect("response", () => errorDialog.destroy());

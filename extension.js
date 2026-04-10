@@ -99,14 +99,11 @@ export default class NightLightScheduler extends Extension {
             "night-light-temperature",
         );
 
-        //console.log(`[Night Light Scheduler] current time: ${currentMinutes} minutes | current temp: ${currentTemp}K | selected temp: ${selectedTemp}K | next change in: ${secondsUntilNext}s`);
-
         if (currentTemp !== selectedTemp) {
             this._colorSettings.set_uint(
                 "night-light-temperature",
                 selectedTemp,
             );
-            //console.log(`[Night Light Scheduler] Temperature set to ${selectedTemp}`);
         }
 
         this._timeoutId = GLib.timeout_add_seconds(

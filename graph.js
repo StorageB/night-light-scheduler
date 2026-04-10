@@ -97,7 +97,7 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
         cr.rectangle(marginLeft, marginTop, graphWidth, graphHeight);
         cr.stroke();
 
-        /* Build curve */
+        /* Curve */
 
         cr.newPath();
 
@@ -172,7 +172,7 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
             PangoCairo.show_layout(cr, layout);
         }
 
-        /* Current time indicator vertical line */
+        /* Vertical line indicator at current time */
 
         const now = GLib.DateTime.new_now_local();
         const hour = now.get_hour();
@@ -189,7 +189,7 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
         cr.setSourceRGBA(color.red, color.green, color.blue, 0.6);
         cr.stroke();
 
-        /* Draw dot at current time */
+        /* Dot at current time */
 
         cr.setSourceRGBA(color.red, color.green, color.blue, 0.6);
         cr.arc(x, dotY, 3.5, 0, Math.PI * 2);
@@ -241,27 +241,19 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
                 timeStr = `${displayHour}:${minuteStr} ${ampm}`;
             }
 
-            const label = `${timeStr}\n${hoverTemp}K`;
+            const label = `${timeStr}\n${hoverTemp} K`;
             const layout = area.create_pango_layout(label);
             const [textWidth, textHeight] = layout.get_pixel_size();
             const labelX = marginLeft + 6;
             const labelY = marginTop + 4;
 
-            /* Draw text background box */
-
-            /*
-            cr.setSourceRGBA(color.red, color.green, color.blue, 0.2);
-            cr.rectangle(labelX - 6, labelY - 3, textWidth + 12, textHeight + 6);
-            cr.fill();
-            */
-
-            /* Draw text */
+            /* Hover text */
 
             cr.setSourceRGBA(color.red, color.green, color.blue, 0.9);
             cr.moveTo(labelX, labelY);
             PangoCairo.show_layout(cr, layout);
 
-            /* Draw dot on curve */
+            /* Hover dot on curve */
 
             const hx =
                 marginLeft + (hoverTime / 24) * (width - marginLeft - 12);

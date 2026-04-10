@@ -80,7 +80,7 @@ export default class Prefs extends ExtensionPreferences {
                 title: _(
                     "Night Light is disabled. See Setup notes in the Configuration tab.",
                 ),
-                button_label: "Dismiss",
+                button_label: _("Dismiss"),
                 revealed: true,
             });
             bannerRow.set_child(banner);
@@ -107,7 +107,7 @@ export default class Prefs extends ExtensionPreferences {
             },
         );
 
-        /* Add chart */
+        /* Add graph */
 
         const chartGroup = new Adw.PreferencesGroup();
         page.add(chartGroup);
@@ -435,7 +435,7 @@ export default class Prefs extends ExtensionPreferences {
         const exportRow = new Adw.ActionRow({
             title: _("Export Profile"),
             subtitle: _(
-                "Click to export the nightlight.ini configuration file to the home directory",
+                "Click to export the schedule.ini configuration file to the home directory",
             ),
             activatable: true,
         });
@@ -450,7 +450,7 @@ export default class Prefs extends ExtensionPreferences {
         const importRow = new Adw.ActionRow({
             title: _("Import Profile"),
             subtitle: _(
-                "Click to import the nightlight.ini configuration file from the home directory",
+                "Click to import the schedule.ini configuration file from the home directory",
             ),
             activatable: true,
         });
@@ -477,7 +477,6 @@ export default class Prefs extends ExtensionPreferences {
         });
 
         const configRow = new Adw.ActionRow({
-            //title: _('Setup'),
             subtitle: _(
                 "Enable Night Light in GNOME Settings\n" +
                     "•    Set Schedule type to Manual Schedule\n" +
