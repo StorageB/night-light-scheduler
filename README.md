@@ -6,18 +6,11 @@
 
 ## Installation
 
-<!--
-### Recommended Installation
+### Recommended
 
-(not yet available on GNOME Extension)
-
-Browse for and install this extension through the GNOME Extension Manager, or install through the [GNOME Extensions website](https://extensions.gnome.org/extension/).
+Browse for and install this extension through the GNOME Extension Manager app or the [GNOME Extensions website](https://extensions.gnome.org/extension/9683/night-light-scheduler/).
 
 ### Manual Installation
--->
-
-Extension is in beta and not yet published to the GNOME Extensions website. 
-To install manually:
 
 1. Download the `night-light-scheduler` file of the [latest release](https://github.com/StorageB/night-light-scheduler/releases). 
 2. In the terminal from the download location run:
