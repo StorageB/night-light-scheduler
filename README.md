@@ -2,7 +2,7 @@
 
 #### A GNOME extension for creating a time-of-day schedule for the built-in Night Light.
 
-![screenshot-main](img/screenshot-00.png)
+![screenshot-main](img/screenshot-01.png)
 
 ## Installation
 
@@ -12,7 +12,7 @@ Browse for and install this extension through the GNOME Extension Manager app or
 
 ### Manual Installation
 
-1. Download the `night-light-scheduler` file of the [latest release](https://github.com/StorageB/night-light-scheduler/releases). 
+1. Download the `night-light-scheduler.zip` file of the [latest release](https://github.com/StorageB/night-light-scheduler/releases). 
 2. In the terminal from the download location run:
 `gnome-extensions install --force night-light-scheduler.zip`
 3. Logout and login.
@@ -26,4 +26,25 @@ gnome-extensions prefs night-light-scheduler@storageb.github.com
 
 1. Turn on Night Light in GNOME Settings.
 2. Select "Manual Schedule", and set Night Light to be always active (midnight to midnight).
-3. Configure your custom schedule through the extension preferences. 
+3. Configure your custom schedule through the extension preferences.
+
+## Backup and Restore
+
+Use the import/export buttons in the preferences window to load or save the Night Light schedule saved as an editable `schedule.ini` file in your home directory.
+
+Manually editing the `schedule.ini` file:
+- This file must be named schedule.ini and be located in the user's home directory to import 
+- Times must use 24 hour format and be in ascending order beginning with 0:00 
+- Temperature (Kelvin) must be between 1500 and 6500 
+
+Example `schedule.ini` entry:
+```
+[schedule]
+0:00=2400
+6:45=3050
+8:00=3900
+9:30=4700
+18:30=4100
+20:30=3200
+22:30=2400
+```
