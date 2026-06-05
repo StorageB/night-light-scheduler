@@ -23,6 +23,7 @@ import GLib from "gi://GLib";
 import Gio from "gi://Gio";
 
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
+import { getTempAtTime, getNextWakeSeconds } from "./scheduleUtils.js";
 
 export default class NightLightScheduler extends Extension {
     enable() {
@@ -38,6 +39,13 @@ export default class NightLightScheduler extends Extension {
             },
         );
 
+        this._transitionChangedId = this._extensionSettings.connect(
+                "changed::transition-time",
+                () => {
+                    this._scheduleNext();
+                },
+            );
+
         this._scheduleNext();
     }
 
@@ -50,6 +58,11 @@ export default class NightLightScheduler extends Extension {
         if (this._scheduleChangedId) {
             this._extensionSettings.disconnect(this._scheduleChangedId);
             this._scheduleChangedId = null;
+        }
+
+        if (this._transitionChangedId) {
+            this._extensionSettings.disconnect(this._transitionChangedId);
+            this._transitionChangedId = null;
         }
 
         this._extensionSettings = null;
@@ -73,38 +86,31 @@ export default class NightLightScheduler extends Extension {
 
         if (schedule.length === 0) return;
 
+        const fadeMinutes = this._extensionSettings.get_int("transition-time");
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
         const currentSeconds = now.getSeconds();
 
-        let selectedTemp = schedule[0].temp;
-        let nextMinutes = null;
-
-        for (let entry of schedule) {
-            const entryMinutes = entry.hour * 60 + entry.minute;
-
-            if (entryMinutes <= currentMinutes) selectedTemp = entry.temp;
-            else if (nextMinutes === null) nextMinutes = entryMinutes;
-        }
-
-        if (nextMinutes === null)
-            nextMinutes = schedule[0].hour * 60 + schedule[0].minute + 1440;
-
-        const secondsUntilNext = Math.max(
-            1,
-            (nextMinutes - currentMinutes) * 60 - currentSeconds,
-        );
-
-        const currentTemp = this._colorSettings.get_uint(
-            "night-light-temperature",
-        );
-
-        if (currentTemp !== selectedTemp) {
-            this._colorSettings.set_uint(
-                "night-light-temperature",
-                selectedTemp,
+        const targetTemp =
+            getTempAtTime(
+                schedule,
+                currentMinutes,
+                currentSeconds,
+                fadeMinutes,
             );
-        }
+        
+        const secondsUntilNext =
+            getNextWakeSeconds(
+                schedule,
+                currentMinutes,
+                currentSeconds,
+                fadeMinutes,
+            );
+        
+        const currentTemp = this._colorSettings.get_uint("night-light-temperature");
+        
+        if (currentTemp !== targetTemp)
+            this._colorSettings.set_uint("night-light-temperature",targetTemp);
 
         this._timeoutId = GLib.timeout_add_seconds(
             GLib.PRIORITY_DEFAULT,

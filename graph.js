@@ -24,7 +24,15 @@ import GLib from "gi://GLib";
 import Cairo from "gi://cairo";
 import PangoCairo from "gi://PangoCairo";
 
-export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
+import { getTempAtTime } from "./scheduleUtils.js";
+
+export function createScheduleGraph(
+    schedule,
+    clockFormat,
+    max_temp,
+    min_temp,
+    fadeMinutes,
+) {
     const chart_min_temp = min_temp - 100;
     const marginLeft = 12;
     const marginRight = 12;
@@ -100,27 +108,23 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
         /* Curve */
 
         cr.newPath();
-
-        for (let i = 0; i < schedule.length; i++) {
-            const current = schedule[i];
-            const x = graphX(current.hour + current.minute / 60);
-            const y = graphY(current.temp);
-
-            if (i === 0) {
+        
+        for (let minutes = 0; minutes <= 1440; minutes++) {
+            const time = minutes / 60;
+            const temp =
+                getTempAtTime(
+                    schedule,
+                    minutes,
+                    0,
+                    fadeMinutes,
+                );
+            const x = graphX(time);
+            const y = graphY(temp);
+        
+            if (minutes === 0)
                 cr.moveTo(x, y);
-            } else {
-                const prev = schedule[i - 1];
-                const prevY = graphY(prev.temp);
-                cr.lineTo(x, prevY);
+            else
                 cr.lineTo(x, y);
-            }
-        }
-
-        if (schedule.length > 0) {
-            const last = schedule[schedule.length - 1];
-            const lastY = graphY(last.temp);
-            const endX = graphX(24);
-            cr.lineTo(endX, lastY); // extend last temperature to 24:00
         }
 
         /* Gradient fill */
@@ -179,7 +183,13 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
         const minute = now.get_minute();
         const currentTime = hour + minute / 60;
         const x = Math.round(graphX(currentTime)) + 0.5;
-        const temp = getTempAtTime(schedule, currentTime);
+        const temp =
+            getTempAtTime(
+                schedule,
+                hour * 60 + minute,
+                0,
+                fadeMinutes,
+            );
         const dotY = graphY(temp);
 
         cr.setLineWidth(1.0);
@@ -275,7 +285,13 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
         const height = drawingArea.get_height();
         const graphHeight = height - marginTop - marginBottom;
         const time = ((x - marginLeft) / graphWidth) * 24;
-        const temp = getTempAtTime(schedule, time);
+        const temp =
+            getTempAtTime(
+                schedule,
+                Math.round(time * 60),
+                0,
+                fadeMinutes,
+            );
 
         if (time < 0 || time > 24) {
             hoverTime = null;
@@ -310,16 +326,6 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
         hoverCallback = null;
     });
 
-    function getTempAtTime(schedule, time) {
-        let lastTemp = schedule[0].temp;
-        for (let entry of schedule) {
-            const t = entry.hour + entry.minute / 60;
-            if (t > time) break;
-            lastTemp = entry.temp;
-        }
-        return lastTemp;
-    }
-
     drawingArea.setClockFormat = function (newFormat) {
         clockFormat = newFormat;
         drawingArea.queue_draw();
@@ -329,6 +335,12 @@ export function createScheduleGraph(schedule, clockFormat, max_temp, min_temp) {
         schedule = newSchedule;
         drawingArea.queue_draw();
     };
+
+    drawingArea.setFadeMinutes =
+        function (minutes) {
+            fadeMinutes = minutes;
+            drawingArea.queue_draw();
+        };
 
     return drawingArea;
 }

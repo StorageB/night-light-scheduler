@@ -38,7 +38,7 @@ const MAX_TEMP = 6500;
 
 export default class Prefs extends ExtensionPreferences {
     fillPreferencesWindow(window) {
-        window.set_default_size(630, 760);
+        window.set_default_size(630, 800);
         window._settings = this.getSettings();
 
         const display = Gdk.Display.get_default();
@@ -129,6 +129,7 @@ export default class Prefs extends ExtensionPreferences {
             clockFormat,
             MAX_TEMP,
             MIN_TEMP,
+            window._settings.get_int("transition-time"),
         );
         const chartRow = new Adw.PreferencesRow({
             activatable: false,
@@ -145,7 +146,58 @@ export default class Prefs extends ExtensionPreferences {
         chartRow.set_child(chartBox);
         chartGroup.add(chartRow);
 
-        /* Build UI */
+        /* Add Transition Time row */
+        
+        const transitionRow = new Adw.ActionRow({
+            title: _("Transition time"),
+            margin_start: 14,
+        });
+
+        let fadeTime = window._settings.get_int("transition-time");
+        
+        const minutesLabel = new Gtk.Label({
+            label: `${fadeTime} min`,
+            xalign: 1,
+            width_chars: 7,
+        });
+        minutesLabel.add_css_class("dim-label");
+        transitionRow.add_suffix(minutesLabel);
+
+        const adjustment = new Gtk.Adjustment({
+            lower: 0,
+            upper: 120,
+            step_increment: 5,
+            page_increment: 10,
+            value: fadeTime,
+        });
+        const scale = new Gtk.Scale({
+            orientation: Gtk.Orientation.HORIZONTAL,
+            adjustment: adjustment,
+            digits: 0,
+            width_request: 160,
+        });
+        scale.valign = Gtk.Align.CENTER;
+        scale.margin_start = 4;
+        transitionRow.add_suffix(scale);
+        
+        scale.connect("value-changed", () => {
+            let temp = Math.round(scale.get_value() / 5) * 5;
+            if (temp !== scale.get_value()) scale.set_value(temp);
+            fadeTime = temp;
+            minutesLabel.set_label(`${fadeTime} min`);
+            window._settings.set_int("transition-time", fadeTime);
+        });
+
+        const transitionChangedId = window._settings.connect(
+                "changed::transition-time",
+                () => {
+                    drawingArea.setFadeMinutes(window._settings.get_int("transition-time"));
+                },
+            );
+                
+        chartGroup.add(transitionRow);
+
+        /* Build scheduling UI */
 
         buildScheduleUI();
 
@@ -205,7 +257,7 @@ export default class Prefs extends ExtensionPreferences {
                 const tempLabel = new Gtk.Label({
                     label: `${entry.temp} K`,
                     xalign: 1,
-                    width_chars: 5,
+                    width_chars: 6,
                 });
                 tempLabel.add_css_class("dim-label");
                 row.add_suffix(tempLabel);
@@ -224,7 +276,6 @@ export default class Prefs extends ExtensionPreferences {
                     width_request: 200,
                 });
                 scale.valign = Gtk.Align.CENTER;
-                scale.add_css_class("compact");
                 scale.set_hexpand(true);
                 scale.margin_start = 12;
                 scale.margin_end = 12;
@@ -344,7 +395,6 @@ export default class Prefs extends ExtensionPreferences {
 
                 scale.connect("value-changed", () => {
                     let temp = Math.round(scale.get_value() / 50) * 50;
-
                     if (temp !== scale.get_value()) scale.set_value(temp);
                     entry.temp = temp;
                     tempLabel.set_label(`${temp} K`);
@@ -495,8 +545,9 @@ export default class Prefs extends ExtensionPreferences {
 
         window.connect("close-request", () => {
             if (clockChangedId) clockSettings.disconnect(clockChangedId);
+            if (transitionChangedId) window._settings.disconnect(transitionChangedId);
             Gtk.StyleContext.remove_provider_for_display(display, provider);
-            repeatIds.forEach((id) => GLib.Source.remove(id));
+            repeatIds.forEach((id) => { if (id) GLib.Source.remove(id); });
             repeatIds.length = 0;
         });
     } // end of fillPreferencesWindow
