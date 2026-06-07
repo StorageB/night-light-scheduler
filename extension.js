@@ -86,7 +86,7 @@ export default class NightLightScheduler extends Extension {
 
         if (schedule.length === 0) return;
 
-        const fadeMinutes = this._extensionSettings.get_int("transition-time");
+        const transitionTime = this._extensionSettings.get_int("transition-time");
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
         const currentSeconds = now.getSeconds();
@@ -96,7 +96,7 @@ export default class NightLightScheduler extends Extension {
                 schedule,
                 currentMinutes,
                 currentSeconds,
-                fadeMinutes,
+                transitionTime,
             );
         
         const secondsUntilNext =
@@ -104,7 +104,7 @@ export default class NightLightScheduler extends Extension {
                 schedule,
                 currentMinutes,
                 currentSeconds,
-                fadeMinutes,
+                transitionTime,
             );
         
         const currentTemp = this._colorSettings.get_uint("night-light-temperature");

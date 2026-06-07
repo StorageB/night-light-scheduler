@@ -29,7 +29,7 @@ import { gettext as _ } from "resource:///org/gnome/Shell/Extensions/js/extensio
 let FILE_NAME = "schedule.ini";
 let FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), FILE_NAME]);
 
-export function exportProfile(window, schedule, max_temp, min_temp) {
+export function exportProfile(window, schedule, max_temp, min_temp, fadeTime, max_fade) {
     const timestamp = new Date().toLocaleString();
     let keyFile = new GLib.KeyFile();
 
@@ -45,14 +45,16 @@ export function exportProfile(window, schedule, max_temp, min_temp) {
             ` This file must be named ${FILE_NAME} and be located in the user's home directory to import \n` +
             ` Times must use 24 hour format and be in ascending order beginning with 0:00 \n` +
             ` Temperature (Kelvin) must be between ${min_temp} and ${max_temp} \n` +
+            ` Transition time (minutes) must be between 0 and ${max_fade} \n` +
             ` \n`,
     );
 
     /* Export profile */
 
+    keyFile.set_integer("schedule", "transition-time", fadeTime);
+    
     for (let entry of schedule) {
-        const time =
-            entry.hour + ":" + entry.minute.toString().padStart(2, "0");
+        const time = entry.hour + ":" + entry.minute.toString().padStart(2, "0");
         keyFile.set_integer("schedule", time, entry.temp);
     }
 
@@ -109,7 +111,7 @@ export function exportProfile(window, schedule, max_temp, min_temp) {
     }
 }
 
-export function importProfile(settings, window, max_temp, min_temp) {
+export function importProfile(settings, window, max_temp, min_temp, max_fade) {
     let keyFile = new GLib.KeyFile();
 
     /* Check if file exists */
@@ -164,12 +166,26 @@ export function importProfile(settings, window, max_temp, min_temp) {
     /* Import profile */
 
     let newSchedule = [];
+    let transitionTime = 0;
 
     try {
         const [keys] = keyFile.get_keys("schedule");
 
         for (let key of keys) {
             const keyStr = String(key).trim();
+
+            if (keyStr === "transition-time") {
+                transitionTime = keyFile.get_integer("schedule", key);
+
+                // verify transition time is within valid range
+                if (transitionTime < 0 || transitionTime > max_fade)
+                    throw new Error(
+                        _(`Transition time must be between 0 and ${max_fade} minutes`),
+                    );
+
+                continue;
+            }
+
             const parts = keyStr.split(":");
 
             // verify time is in XX:XX format
@@ -188,7 +204,7 @@ export function importProfile(settings, window, max_temp, min_temp) {
             let hour = parseInt(parts[0]);
             let minute = parseInt(parts[1]);
 
-            // verify hours and minutes are in proper range
+            // verify hours and minutes are within valid range
             if (hour < 0 || hour > 23 || minute < 0 || minute > 59)
                 throw new Error(_("Out of range time: %s").format(key));
 
@@ -203,7 +219,7 @@ export function importProfile(settings, window, max_temp, min_temp) {
                 );
             }
 
-            // verify temperature is in proper range
+            // verify temperature is within valid range
             if (temp < min_temp || temp > max_temp)
                 throw new Error(
                     _("Out of range temperature of %s at %s").format(temp, key),
@@ -239,7 +255,10 @@ export function importProfile(settings, window, max_temp, min_temp) {
             "a(uuu)",
             newSchedule.map((e) => [e.hour, e.minute, e.temp]),
         );
+
+        // Save imported values
         settings.set_value("schedule", variant);
+        settings.set_int("transition-time", transitionTime);    
     } catch (e) {
         const toast = Adw.Toast.new(_("Invalid profile format"));
         toast.set_timeout(4);

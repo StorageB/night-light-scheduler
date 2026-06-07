@@ -31,7 +31,7 @@ export function createScheduleGraph(
     clockFormat,
     max_temp,
     min_temp,
-    fadeMinutes,
+    transitionTime,
 ) {
     const chart_min_temp = min_temp - 100;
     const marginLeft = 12;
@@ -116,7 +116,7 @@ export function createScheduleGraph(
                     schedule,
                     minutes,
                     0,
-                    fadeMinutes,
+                    transitionTime,
                 );
             const x = graphX(time);
             const y = graphY(temp);
@@ -188,7 +188,7 @@ export function createScheduleGraph(
                 schedule,
                 hour * 60 + minute,
                 0,
-                fadeMinutes,
+                transitionTime,
             );
         const dotY = graphY(temp);
 
@@ -290,7 +290,7 @@ export function createScheduleGraph(
                 schedule,
                 Math.round(time * 60),
                 0,
-                fadeMinutes,
+                transitionTime,
             );
 
         if (time < 0 || time > 24) {
@@ -336,9 +336,9 @@ export function createScheduleGraph(
         drawingArea.queue_draw();
     };
 
-    drawingArea.setFadeMinutes =
+    drawingArea.settransitionTime =
         function (minutes) {
-            fadeMinutes = minutes;
+            transitionTime = minutes;
             drawingArea.queue_draw();
         };
 

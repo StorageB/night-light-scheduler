@@ -35,6 +35,7 @@ import { importProfile } from "./backup.js";
 
 const MIN_TEMP = 1500;
 const MAX_TEMP = 6500;
+const MAX_FADE = 120;
 
 export default class Prefs extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -147,16 +148,16 @@ export default class Prefs extends ExtensionPreferences {
         chartGroup.add(chartRow);
 
         /* Add Transition Time row */
-        
+
         const transitionRow = new Adw.ActionRow({
             title: _("Transition time"),
             margin_start: 14,
         });
 
-        let fadeTime = window._settings.get_int("transition-time");
-        
+        const transitionTime = window._settings.get_int("transition-time");
+
         const minutesLabel = new Gtk.Label({
-            label: `${fadeTime} min`,
+            label: `${transitionTime} min`,
             xalign: 1,
             width_chars: 7,
         });
@@ -165,10 +166,10 @@ export default class Prefs extends ExtensionPreferences {
 
         const adjustment = new Gtk.Adjustment({
             lower: 0,
-            upper: 120,
+            upper: MAX_FADE,
             step_increment: 5,
             page_increment: 10,
-            value: fadeTime,
+            value: transitionTime,
         });
         const scale = new Gtk.Scale({
             orientation: Gtk.Orientation.HORIZONTAL,
@@ -179,22 +180,25 @@ export default class Prefs extends ExtensionPreferences {
         scale.valign = Gtk.Align.CENTER;
         scale.margin_start = 4;
         transitionRow.add_suffix(scale);
-        
+
         scale.connect("value-changed", () => {
-            let temp = Math.round(scale.get_value() / 5) * 5;
-            if (temp !== scale.get_value()) scale.set_value(temp);
-            fadeTime = temp;
-            minutesLabel.set_label(`${fadeTime} min`);
-            window._settings.set_int("transition-time", fadeTime);
+            let value = Math.round(scale.get_value() / 5) * 5;
+            if (value !== scale.get_value()) scale.set_value(value);
+            window._settings.set_int("transition-time", value);
         });
 
         const transitionChangedId = window._settings.connect(
-                "changed::transition-time",
-                () => {
-                    drawingArea.setFadeMinutes(window._settings.get_int("transition-time"));
-                },
-            );
-                
+            "changed::transition-time",
+            () => {
+                const transitionTime =
+                    window._settings.get_int("transition-time");
+                if (scale.get_value() !== transitionTime)
+                    scale.set_value(transitionTime);
+                minutesLabel.set_label(`${transitionTime} min`);
+                drawingArea.settransitionTime(transitionTime);
+            },
+        );
+
         chartGroup.add(transitionRow);
 
         /* Build scheduling UI */
@@ -494,7 +498,14 @@ export default class Prefs extends ExtensionPreferences {
         );
 
         exportRow.connect("activated", () => {
-            exportProfile(window, schedule, MAX_TEMP, MIN_TEMP);
+            exportProfile(
+                window,
+                schedule,
+                MAX_TEMP,
+                MIN_TEMP,
+                window._settings.get_int("transition-time"),
+                MAX_FADE,
+            );
         });
 
         const importRow = new Adw.ActionRow({
@@ -509,7 +520,13 @@ export default class Prefs extends ExtensionPreferences {
         );
 
         importRow.connect("activated", () => {
-            importProfile(window._settings, window, MAX_TEMP, MIN_TEMP);
+            importProfile(
+                window._settings,
+                window,
+                MAX_TEMP,
+                MIN_TEMP,
+                MAX_FADE,
+            );
             schedule.length = 0;
             const rawSchedule = window._settings
                 .get_value("schedule")
@@ -545,9 +562,12 @@ export default class Prefs extends ExtensionPreferences {
 
         window.connect("close-request", () => {
             if (clockChangedId) clockSettings.disconnect(clockChangedId);
-            if (transitionChangedId) window._settings.disconnect(transitionChangedId);
+            if (transitionChangedId)
+                window._settings.disconnect(transitionChangedId);
             Gtk.StyleContext.remove_provider_for_display(display, provider);
-            repeatIds.forEach((id) => { if (id) GLib.Source.remove(id); });
+            repeatIds.forEach((id) => {
+                if (id) GLib.Source.remove(id);
+            });
             repeatIds.length = 0;
         });
     } // end of fillPreferencesWindow
