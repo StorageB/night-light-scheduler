@@ -180,7 +180,7 @@ export function importProfile(settings, window, max_temp, min_temp, max_fade) {
                 // verify transition time is within valid range
                 if (transitionTime < 0 || transitionTime > max_fade)
                     throw new Error(
-                        _(`Transition time must be between 0 and ${max_fade} minutes`),
+                        _("Transition time must be between 0 and %d minutes").format(max_fade)
                     );
 
                 continue;
