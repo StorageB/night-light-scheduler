@@ -79,7 +79,7 @@ export default class Prefs extends ExtensionPreferences {
 
             const banner = new Adw.Banner({
                 title: _(
-                    "Night Light is disabled. See Setup notes in the Configuration tab.",
+                    "Night Light is disabled. See Initial Setup in Configuration tab.",
                 ),
                 button_label: _("Dismiss"),
                 revealed: true,
