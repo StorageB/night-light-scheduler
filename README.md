@@ -35,6 +35,7 @@ Use the import/export buttons in the extension preferences to load/save the sche
 Example `schedule.ini` entry:
 ```
 [schedule]
+transition-time=20
 0:00=2400
 6:00=3150
 7:30=3900
