@@ -5,13 +5,9 @@
     <key name="schedule" type="a(uuu)">
         <default>
         [
-            (0, 0, 2400),
-            (6, 0, 3150),
-            (7, 30, 3900),
-            (9, 0, 4700),
-            (18, 45, 3900),
-            (21, 0, 3150),
-            (23, 0, 2400)
+            (0, 0, 3000),
+            (7, 0, 4500),
+            (19, 0, 3000)
         ]
         </default>
         <summary>Night Light schedule</summary>
@@ -19,9 +15,9 @@
     </key>
 
     <key name="transition-time" type="i">
-        <default>15</default>
+        <default>30</default>
         <summary>Temperature transition time</summary>
-        <description>Length of time to transition between the scheduled temperatures.</description>
+        <description>Length of time in minutes to transition between scheduled temperatures.</description>
     </key>
     
   </schema>
