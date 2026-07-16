@@ -482,6 +482,32 @@ export default class Prefs extends ExtensionPreferences {
         });
         window.add(configPage);
 
+        const settingsGroup = new Adw.PreferencesGroup({
+            title: _("Settings"),
+        });
+
+        const hideIndicatorRow = new Adw.SwitchRow({
+            title: _("Hide Night Light Indicator"),
+            subtitle: _("Hide the Night Light indicator icon from the top panel"),
+        });
+        window._settings.bind(
+            "hide-indicator",
+            hideIndicatorRow,
+            "active",
+            Gio.SettingsBindFlags.DEFAULT,
+        );
+
+        const hideToggleRow = new Adw.SwitchRow({
+            title: _("Hide Night Light Toggle"),
+            subtitle: _("Hide the Night Light toggle from Quick Settings"),
+        });
+        window._settings.bind(
+            "hide-toggle",
+            hideToggleRow,
+            "active",
+            Gio.SettingsBindFlags.DEFAULT,
+        );
+
         const backupGroup = new Adw.PreferencesGroup({
             title: _("Backup and Restore"),
         });
@@ -554,6 +580,11 @@ export default class Prefs extends ExtensionPreferences {
 
         configPage.add(setupGroup);
         setupGroup.add(configRow);
+
+        configPage.add(settingsGroup)
+        settingsGroup.add(hideIndicatorRow);
+        settingsGroup.add(hideToggleRow);
+        
         configPage.add(backupGroup);
         backupGroup.add(exportRow);
         backupGroup.add(importRow);

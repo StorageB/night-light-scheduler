@@ -21,6 +21,7 @@
 
 import GLib from "gi://GLib";
 import Gio from "gi://Gio";
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 import { getTempAtTime, getNextWakeSeconds } from "./scheduleUtils.js";
@@ -34,19 +35,27 @@ export default class NightLightScheduler extends Extension {
 
         this._scheduleChangedId = this._extensionSettings.connect(
             "changed::schedule",
-            () => {
-                this._scheduleNext();
-            },
+            () => this._scheduleNext()
         );
 
         this._transitionChangedId = this._extensionSettings.connect(
                 "changed::transition-time",
-                () => {
-                    this._scheduleNext();
-                },
+                () => this._scheduleNext()
             );
 
+        this._hideIndicatorChangedId = this._extensionSettings.connect(
+            "changed::hide-indicator",
+            () => this._updateNightLightVisibility()
+        );
+        
+        this._hideToggleChangedId = this._extensionSettings.connect(
+            "changed::hide-toggle",
+            () => this._updateNightLightVisibility()
+        );
+
         this._scheduleNext();
+        this._updateNightLightVisibility();
+
     }
 
     disable() {
@@ -64,6 +73,21 @@ export default class NightLightScheduler extends Extension {
             this._extensionSettings.disconnect(this._transitionChangedId);
             this._transitionChangedId = null;
         }
+
+        if (this._hideIndicatorChangedId) {
+            this._extensionSettings.disconnect(this._hideIndicatorChangedId);
+            this._hideIndicatorChangedId = null;
+        }
+        
+        if (this._hideToggleChangedId) {
+            this._extensionSettings.disconnect(this._hideToggleChangedId);
+            this._hideToggleChangedId = null;
+        }
+
+        const qs = Main.panel.statusArea.quickSettings;
+        const nightLight = qs._nightLight;
+        nightLight._indicator.visible = true;
+        nightLight.quickSettingsItems[0].visible = true;
 
         this._extensionSettings = null;
         this._colorSettings = null;
@@ -120,5 +144,16 @@ export default class NightLightScheduler extends Extension {
                 return GLib.SOURCE_REMOVE;
             },
         );
+    }
+
+    _updateNightLightVisibility() {
+        const qs = Main.panel.statusArea.quickSettings;
+        const nightLight = qs._nightLight;
+    
+        nightLight._indicator.visible =
+            !this._extensionSettings.get_boolean("hide-indicator");
+    
+        nightLight.quickSettingsItems[0].visible =
+            !this._extensionSettings.get_boolean("hide-toggle");
     }
 }

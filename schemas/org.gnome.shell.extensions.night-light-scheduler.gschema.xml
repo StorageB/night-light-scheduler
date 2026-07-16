@@ -19,6 +19,18 @@
         <summary>Temperature transition time</summary>
         <description>Length of time in minutes to transition between scheduled temperatures.</description>
     </key>
+
+    <key name="hide-indicator" type="b">
+        <default>false</default>
+        <summary>Hide Night Light indicator</summary>
+        <description>Hide the Night Light indicator icon from the top panel.</description>
+    </key>
+
+    <key name="hide-toggle" type="b">
+        <default>false</default>
+        <summary>Hide Night Light toggle</summary>
+        <description>Hide the Night Light toggle from the Quick Settings menu.</description>
+    </key>
     
   </schema>
 </schemalist>
