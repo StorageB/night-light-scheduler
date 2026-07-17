@@ -19,59 +19,54 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
- function getScheduleInfo(
-     schedule,
-     currentMinutes,
-     fadeMinutes,
- ) {
-     let currentEntry = schedule[schedule.length - 1];
-     let nextEntry = schedule[0];
- 
-     for (let entry of schedule) {
-         const entryMinutes = entry.hour * 60 + entry.minute;
- 
-         if (entryMinutes <= currentMinutes)
-             currentEntry = entry;
-         else {
-             nextEntry = entry;
-             break;
-         }
-     }
- 
-     let nextMinutes = nextEntry.hour * 60 + nextEntry.minute;
- 
-     if (nextMinutes <= currentMinutes)
-         nextMinutes += 1440;
- 
-     const currentEntryMinutes = currentEntry.hour * 60 + currentEntry.minute;
-     let adjustedCurrentEntryMinutes = currentEntryMinutes;
- 
-     if (nextMinutes >= 1440 && adjustedCurrentEntryMinutes < currentMinutes)
-         adjustedCurrentEntryMinutes += 1440;
- 
-     const intervalMinutes = nextMinutes - adjustedCurrentEntryMinutes;
- 
-     const actualFadeMinutes =
-         Math.min(
-             fadeMinutes,
-             intervalMinutes,
-         );
- 
-     const fadeStart = nextMinutes - actualFadeMinutes;
-     let adjustedCurrentMinutes = currentMinutes;
- 
-     if (nextMinutes >= 1440 && adjustedCurrentMinutes < currentEntryMinutes)
-         adjustedCurrentMinutes += 1440;
- 
-     return {
-         currentEntry,
-         nextEntry,
-         nextMinutes,
-         fadeStart,
-         adjustedCurrentMinutes,
-         actualFadeMinutes,
-     };
- }
+function getScheduleInfo(
+    schedule,
+    currentMinutes,
+    fadeMinutes,
+) {
+    let currentEntry = schedule[schedule.length - 1];
+    let nextEntry = schedule[0];
+
+    for (let entry of schedule) {
+        const entryMinutes = entry.hour * 60 + entry.minute;
+
+        if (entryMinutes <= currentMinutes)
+            currentEntry = entry;
+        else {
+            nextEntry = entry;
+            break;
+        }
+    }
+
+    let nextMinutes = nextEntry.hour * 60 + nextEntry.minute;
+
+    if (nextMinutes <= currentMinutes)
+        nextMinutes += 1440;
+
+    const currentEntryMinutes = currentEntry.hour * 60 + currentEntry.minute;     
+    const intervalMinutes = nextMinutes - currentEntryMinutes;
+
+    const actualFadeMinutes =
+        Math.min(
+            fadeMinutes,
+            intervalMinutes,
+        );
+
+    const fadeStart = nextMinutes - actualFadeMinutes;
+    let adjustedCurrentMinutes = currentMinutes;
+
+    if (nextMinutes >= 1440 && adjustedCurrentMinutes < currentEntryMinutes)
+        adjustedCurrentMinutes += 1440;
+
+    return {
+        currentEntry,
+        nextEntry,
+        nextMinutes,
+        fadeStart,
+        adjustedCurrentMinutes,
+        actualFadeMinutes,
+    };
+}
 
 export function getTempAtTime(
     schedule,

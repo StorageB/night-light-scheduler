@@ -109,7 +109,7 @@ export function createScheduleGraph(
 
         cr.newPath();
         
-        for (let minutes = 0; minutes <= 1440; minutes++) {
+        for (let minutes = 0; minutes < 1440; minutes++) {
             const time = minutes / 60;
             const temp =
                 getTempAtTime(
@@ -126,6 +126,15 @@ export function createScheduleGraph(
             else
                 cr.lineTo(x, y);
         }
+
+        const midnightTemp =
+            getTempAtTime(
+                schedule,
+                0,
+                0,
+                transitionTime,
+            );
+        cr.lineTo(graphX(24), graphY(midnightTemp));
 
         /* Gradient fill */
 
@@ -253,7 +262,6 @@ export function createScheduleGraph(
 
             const label = `${timeStr}\n${hoverTemp} K`;
             const layout = area.create_pango_layout(label);
-            const [textWidth, textHeight] = layout.get_pixel_size();
             const labelX = marginLeft + 6;
             const labelY = marginTop + 4;
 
