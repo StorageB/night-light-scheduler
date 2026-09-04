@@ -78,7 +78,7 @@ export default class NightLightScheduler extends Extension {
                 retryCount++;
         
                 if (retryCount >= 25) {
-                    console.log(`[Night Light Scheduler] Night Light Quick Settings item did not become available after 5 seconds.`);
+                    console.log(`[Night Light Scheduler] Night Light Quick Settings item not available.`);
                     this._nightLightRetryId = null;
                     return GLib.SOURCE_REMOVE;
                 }
