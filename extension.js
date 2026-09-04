@@ -33,29 +33,59 @@ export default class NightLightScheduler extends Extension {
             schema: "org.gnome.settings-daemon.plugins.color",
         });
 
-        this._scheduleChangedId = this._extensionSettings.connect(
+        this._extensionSettings.connectObject(
             "changed::schedule",
-            () => this._scheduleNext()
-        );
-
-        this._transitionChangedId = this._extensionSettings.connect(
-                "changed::transition-time",
-                () => this._scheduleNext()
-            );
-
-        this._hideIndicatorChangedId = this._extensionSettings.connect(
-            "changed::hide-indicator",
-            () => this._updateNightLightVisibility()
+            () => this._scheduleNext(),
+            this
         );
         
-        this._hideToggleChangedId = this._extensionSettings.connect(
+        this._extensionSettings.connectObject(
+            "changed::transition-time",
+            () => this._scheduleNext(),
+            this
+        );
+        
+        this._extensionSettings.connectObject(
+            "changed::hide-indicator",
+            () => this._updateNightLightVisibility(),
+            this
+        );
+        
+        this._extensionSettings.connectObject(
             "changed::hide-toggle",
-            () => this._updateNightLightVisibility()
+            () => this._updateNightLightVisibility(),
+            this
         );
 
         this._scheduleNext();
         this._updateNightLightVisibility();
 
+
+        let retryCount = 0;
+        
+        this._nightLightRetryId = GLib.timeout_add(
+            GLib.PRIORITY_DEFAULT,
+            200,
+            () => {
+                const nightLight = Main.panel.statusArea.quickSettings._nightLight;
+        
+                if (nightLight) {
+                    this._updateNightLightVisibility();
+                    this._nightLightRetryId = null;
+                    return GLib.SOURCE_REMOVE;
+                }
+        
+                retryCount++;
+        
+                if (retryCount >= 25) {
+                    console.log(`[Night Light Scheduler] Night Light Quick Settings item did not become available after 5 seconds.`);
+                    this._nightLightRetryId = null;
+                    return GLib.SOURCE_REMOVE;
+                }
+        
+                return GLib.SOURCE_CONTINUE;
+            }
+        );
     }
 
     disable() {
@@ -64,30 +94,21 @@ export default class NightLightScheduler extends Extension {
             this._timeoutId = null;
         }
 
-        if (this._scheduleChangedId) {
-            this._extensionSettings.disconnect(this._scheduleChangedId);
-            this._scheduleChangedId = null;
+        if (this._extensionSettings)
+            this._extensionSettings.disconnectObject(this);
+
+        if (this._nightLightRetryId) {
+            GLib.Source.remove(this._nightLightRetryId);
+            this._nightLightRetryId = null;
         }
 
-        if (this._transitionChangedId) {
-            this._extensionSettings.disconnect(this._transitionChangedId);
-            this._transitionChangedId = null;
+        const nightLight = Main.panel.statusArea.quickSettings._nightLight;
+        if (nightLight) {
+            if (nightLight._indicator)
+                nightLight._indicator.visible = true;
+            if (nightLight.quickSettingsItems?.length > 0)
+                nightLight.quickSettingsItems[0].visible = true;
         }
-
-        if (this._hideIndicatorChangedId) {
-            this._extensionSettings.disconnect(this._hideIndicatorChangedId);
-            this._hideIndicatorChangedId = null;
-        }
-        
-        if (this._hideToggleChangedId) {
-            this._extensionSettings.disconnect(this._hideToggleChangedId);
-            this._hideToggleChangedId = null;
-        }
-
-        const qs = Main.panel.statusArea.quickSettings;
-        const nightLight = qs._nightLight;
-        nightLight._indicator.visible = true;
-        nightLight.quickSettingsItems[0].visible = true;
 
         this._extensionSettings = null;
         this._colorSettings = null;
@@ -147,13 +168,15 @@ export default class NightLightScheduler extends Extension {
     }
 
     _updateNightLightVisibility() {
-        const qs = Main.panel.statusArea.quickSettings;
-        const nightLight = qs._nightLight;
+        const nightLight = Main.panel.statusArea.quickSettings._nightLight;
+
+        if (!nightLight)
+            return;
     
-        nightLight._indicator.visible =
-            !this._extensionSettings.get_boolean("hide-indicator");
+        if (nightLight._indicator)
+            nightLight._indicator.visible = !this._extensionSettings.get_boolean("hide-indicator");
     
-        nightLight.quickSettingsItems[0].visible =
-            !this._extensionSettings.get_boolean("hide-toggle");
+        if (nightLight.quickSettingsItems?.length > 0)
+            nightLight.quickSettingsItems[0].visible = !this._extensionSettings.get_boolean("hide-toggle");
     }
 }
